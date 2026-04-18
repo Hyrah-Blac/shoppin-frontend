@@ -1,9 +1,56 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import api from '@/lib/api';
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, onRemoveWishlist }) {
   const [hovered, setHovered] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user && product._id) {
+      checkWishlist();
+    }
+  }, [user, product._id]);
+
+  const checkWishlist = async () => {
+    try {
+      const res = await api.get(`/wishlist/check/${product._id}`);
+      setIsWishlisted(res.data.isWishlisted);
+    } catch (error) {
+      console.error('Error checking wishlist:', error);
+    }
+  };
+
+  const toggleWishlist = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      // Redirect to login if not authenticated
+      window.location.href = '/login';
+      return;
+    }
+
+    setAdding(true);
+    try {
+      if (isWishlisted) {
+        await api.delete(`/wishlist/${product._id}`);
+        setIsWishlisted(false);
+        onRemoveWishlist?.();
+      } else {
+        await api.post('/wishlist', { productId: product._id });
+        setIsWishlisted(true);
+      }
+    } catch (error) {
+      console.error('Error toggling wishlist:', error);
+    } finally {
+      setAdding(false);
+    }
+  };
 
   const discount = product.originalPrice && product.price < product.originalPrice
     ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
@@ -45,21 +92,26 @@ export default function ProductCard({ product }) {
             </div>
           )}
 
-          {/* WISHLIST HEART - top left (if no sale badge) */}
-          {!discount && (
-            <div style={{
-              position: 'absolute',
-              top: 8,
-              left: 8,
-              fontSize: 18,
-              zIndex: 2,
-              cursor: 'pointer',
-              background: 'rgba(255,255,255,0)',
-              border: 'none',
-              padding: 0,
-            }}>
-              🤍
-            </div>
+          {/* WISHLIST HEART - on hover or if wishlisted, top left */}
+          {(hovered || isWishlisted) && !discount && (
+            <button
+              onClick={toggleWishlist}
+              disabled={adding}
+              style={{
+                position: 'absolute',
+                top: 8,
+                left: 8,
+                fontSize: 20,
+                zIndex: 2,
+                cursor: adding ? 'not-allowed' : 'pointer',
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                opacity: adding ? 0.6 : 1,
+              }}
+            >
+              {isWishlisted ? '❤️' : '🤍'}
+            </button>
           )}
 
           {/* OUT OF STOCK - top right */}
@@ -96,7 +148,7 @@ export default function ProductCard({ product }) {
             KSh {product.price?.toLocaleString()}
           </div>
 
-          {/* SUBTLE HOVER - just darken slightly */}
+          {/* SUBTLE HOVER OVERLAY */}
           {hovered && (
             <div style={{
               position: 'absolute',

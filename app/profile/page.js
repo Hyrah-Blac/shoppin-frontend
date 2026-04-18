@@ -17,11 +17,11 @@ const masonryStyles = `
 `;
 
 export default function ProfilePage() {
-  const { user, loading, setAuthUser } = useAuth();
+  const { user, loading, logout, setAuthUser } = useAuth();
   const router = useRouter();
   const { addToast } = useToast();
   const [products, setProducts] = useState([]);
-  const [saves, setSaves] = useState([]);
+  const [wishlisted, setWishlisted] = useState([]);
   const [tab, setTab] = useState('created');
   const [fetching, setFetching] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -34,7 +34,7 @@ export default function ProfilePage() {
     if (!user) return;
     Promise.all([
       api.get(`/products/user/${user._id}`).then((r) => setProducts(r.data)),
-      api.get('/saves/my').then((r) => setSaves(r.data)),
+      api.get('/wishlist/my').then((r) => setWishlisted(r.data)),
     ]).finally(() => setFetching(false));
   }, [user]);
 
@@ -57,7 +57,12 @@ export default function ProfilePage() {
   if (loading || fetching) return <div style={{ textAlign: 'center', padding: 60 }}>Loading...</div>;
   if (!user) return null;
 
-  const savedProducts = saves.map((s) => s.product).filter(Boolean);
+  const navTabs = [
+    { key: 'created', label: `Created (${products.length})` },
+    { key: 'saved', label: `Saved (${wishlisted.length})` },
+    { key: 'orders', label: 'Orders' },
+    ...(user.role === 'admin' ? [{ key: 'admin', label: 'Admin' }] : []),
+  ];
 
   return (
     <div>
@@ -116,7 +121,25 @@ export default function ProfilePage() {
               />
             </label>
             <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 4 }}>{user.name}</h1>
-            <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>{user.email}</p>
+            <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 16 }}>{user.email}</p>
+            <button
+              onClick={() => {
+                logout();
+                router.push('/');
+              }}
+              style={{
+                background: '#e60023',
+                color: '#fff',
+                padding: '10px 24px',
+                borderRadius: 24,
+                border: 'none',
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontSize: 14,
+              }}
+            >
+              Logout
+            </button>
           </div>
 
           {/* SETTINGS ICON - TOP RIGHT */}
@@ -130,7 +153,11 @@ export default function ProfilePage() {
             justifyContent: 'center',
             fontSize: 20,
             textDecoration: 'none',
-          }}>
+            transition: 'background 0.2s',
+          }}
+            onMouseEnter={(e) => e.target.style.background = 'var(--border-color)'}
+            onMouseLeave={(e) => e.target.style.background = 'var(--bg-secondary)'}
+          >
             ⚙️
           </Link>
         </div>
@@ -149,29 +176,72 @@ export default function ProfilePage() {
         position: 'sticky',
         top: 61,
         zIndex: 90,
+        overflowX: 'auto',
       }}>
-        {[
-          { key: 'created', label: `Created (${products.length})` },
-          { key: 'saved', label: `Saved (${savedProducts.length})` },
-        ].map((t) => (
-          <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
-            style={{
-              padding: '12px 20px',
-              fontSize: 14,
-              fontWeight: 500,
-              border: 'none',
-              background: 'transparent',
-              color: tab === t.key ? 'var(--text-primary)' : 'var(--text-secondary)',
-              borderBottom: tab === t.key ? '2px solid #111' : '2px solid transparent',
-              cursor: 'pointer',
-              marginBottom: -1,
-              transition: 'color 0.2s',
-            }}
-          >
-            {t.label}
-          </button>
+        {navTabs.map((t) => (
+          t.key === 'orders' ? (
+            <Link
+              key={t.key}
+              href="/orders"
+              style={{
+                padding: '12px 20px',
+                fontSize: 14,
+                fontWeight: 500,
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                borderBottom: '2px solid transparent',
+                cursor: 'pointer',
+                marginBottom: -1,
+                transition: 'color 0.2s',
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {t.label}
+            </Link>
+          ) : t.key === 'admin' ? (
+            <Link
+              key={t.key}
+              href="/admin"
+              style={{
+                padding: '12px 20px',
+                fontSize: 14,
+                fontWeight: 500,
+                border: 'none',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                borderBottom: '2px solid transparent',
+                cursor: 'pointer',
+                marginBottom: -1,
+                transition: 'color 0.2s',
+                textDecoration: 'none',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {t.label}
+            </Link>
+          ) : (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              style={{
+                padding: '12px 20px',
+                fontSize: 14,
+                fontWeight: 500,
+                border: 'none',
+                background: 'transparent',
+                color: tab === t.key ? 'var(--text-primary)' : 'var(--text-secondary)',
+                borderBottom: tab === t.key ? '2px solid #e60023' : '2px solid transparent',
+                cursor: 'pointer',
+                marginBottom: -1,
+                transition: 'color 0.2s',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {t.label}
+            </button>
+          )
         ))}
       </div>
 
@@ -207,13 +277,19 @@ export default function ProfilePage() {
         )}
 
         {tab === 'saved' && (
-          savedProducts.length > 0 ? (
+          wishlisted.length > 0 ? (
             <Masonry
               breakpointCols={breakpoints}
               className="masonry-grid"
               columnClassName="masonry-col"
             >
-              {savedProducts.map((p) => <ProductCard key={p._id} product={p} />)}
+              {wishlisted.map((p) => (
+                <ProductCard 
+                  key={p._id} 
+                  product={p}
+                  onRemoveWishlist={() => setWishlisted(wishlisted.filter((w) => w._id !== p._id))}
+                />
+              ))}
             </Masonry>
           ) : (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)' }}>

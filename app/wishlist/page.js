@@ -26,11 +26,29 @@ export default function WishlistPage() {
 
   useEffect(() => {
     if (user) {
-      api.get('/wishlist/my')
-        .then((r) => setWishlisted(r.data.map((w) => w.product).filter(Boolean)))
-        .finally(() => setFetching(false));
+      fetchWishlist();
     }
   }, [user]);
+
+  const fetchWishlist = async () => {
+    try {
+      const r = await api.get('/wishlist/my');
+      setWishlisted(r.data);
+    } catch (error) {
+      console.error('Error fetching wishlist:', error);
+    } finally {
+      setFetching(false);
+    }
+  };
+
+  const removeFromWishlist = async (productId) => {
+    try {
+      await api.delete(`/wishlist/${productId}`);
+      setWishlisted(wishlisted.filter((p) => p._id !== productId));
+    } catch (error) {
+      console.error('Error removing from wishlist:', error);
+    }
+  };
 
   if (loading || fetching) return <div style={{ textAlign: 'center', padding: 60 }}>Loading...</div>;
 
@@ -43,6 +61,8 @@ export default function WishlistPage() {
           background: '#e60023', color: '#fff',
           padding: '12px 28px', borderRadius: 24,
           fontWeight: 600, fontSize: 15,
+          textDecoration: 'none',
+          display: 'inline-block',
         }}>Browse products</Link>
       </div>
     );
@@ -57,7 +77,13 @@ export default function WishlistPage() {
         className="masonry-grid"
         columnClassName="masonry-col"
       >
-        {wishlisted.map((p) => <ProductCard key={p._id} product={p} />)}
+        {wishlisted.map((product) => (
+          <ProductCard 
+            key={product._id} 
+            product={product}
+            onRemoveWishlist={() => removeFromWishlist(product._id)}
+          />
+        ))}
       </Masonry>
     </div>
   );
