@@ -54,9 +54,15 @@ export default function SettingsPage() {
   if (loading || !user) return <div style={{ textAlign: 'center', padding: 60 }}>Loading...</div>;
 
   const inputStyle = {
-    width: '100%', height: 44, border: '1px solid var(--border-color)',
-    borderRadius: 12, padding: '0 14px', fontSize: 14, outline: 'none',
-    background: 'var(--bg-secondary)', color: 'var(--text-primary)',
+    width: '100%',
+    height: 44,
+    border: '1px solid var(--border-color)',
+    borderRadius: 12,
+    padding: '0 14px',
+    fontSize: 14,
+    outline: 'none',
+    background: 'var(--bg-secondary)',
+    color: 'var(--text-primary)',
   };
 
   return (
@@ -66,6 +72,7 @@ export default function SettingsPage() {
         <h1 style={{ fontSize: 24, fontWeight: 700 }}>Settings</h1>
       </div>
 
+      {/* THEME TOGGLE */}
       <div style={{ background: 'var(--bg-primary)', borderRadius: 20, padding: 24, marginBottom: 20 }}>
         <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Appearance</h2>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -76,23 +83,33 @@ export default function SettingsPage() {
           <button
             onClick={toggleTheme}
             style={{
-              width: 56, height: 32, borderRadius: 16,
+              width: 56,
+              height: 32,
+              borderRadius: 16,
               background: theme === 'dark' ? '#e60023' : '#ddd',
-              border: 'none', cursor: 'pointer', position: 'relative',
+              border: 'none',
+              cursor: 'pointer',
+              position: 'relative',
               transition: 'background 0.3s',
             }}
           >
             <span style={{
-              position: 'absolute', top: 2, left: theme === 'dark' ? 26 : 2,
-              width: 28, height: 28, background: '#fff',
-              borderRadius: '50%', transition: 'left 0.3s',
+              position: 'absolute',
+              top: 2,
+              left: theme === 'dark' ? 26 : 2,
+              width: 28,
+              height: 28,
+              background: '#fff',
+              borderRadius: '50%',
+              transition: 'left 0.3s',
             }} />
           </button>
         </div>
       </div>
 
+      {/* PROFILE SETTINGS */}
       <form onSubmit={handleSave} style={{ background: 'var(--bg-primary)', borderRadius: 20, padding: 24 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Profile</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Account</h2>
 
         <label style={{ display: 'block', marginBottom: 12 }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Name</span>
@@ -103,7 +120,7 @@ export default function SettingsPage() {
           />
         </label>
 
-        <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, marginTop: 20 }}>Address</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, marginTop: 20 }}>Shipping Address</h3>
 
         <label style={{ display: 'block', marginBottom: 12 }}>
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Street</span>
@@ -146,9 +163,16 @@ export default function SettingsPage() {
           type="submit"
           disabled={saving}
           style={{
-            width: '100%', height: 48, background: '#e60023',
-            color: '#fff', border: 'none', borderRadius: 12,
-            fontSize: 15, fontWeight: 700, opacity: saving ? 0.6 : 1,
+            width: '100%',
+            height: 48,
+            background: '#e60023',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 12,
+            fontSize: 15,
+            fontWeight: 700,
+            opacity: saving ? 0.6 : 1,
+            cursor: saving ? 'not-allowed' : 'pointer',
           }}
         >
           {saving ? 'Saving...' : 'Save changes'}
