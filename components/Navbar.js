@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -148,44 +148,7 @@ const STYLES = `
   .nb-avatar:hover { border-color: var(--accent); transform: scale(1.06); }
   .nb-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-  /* DROPDOWN */
-  .nb-dropdown-wrap { position: relative; }
-  .nb-dropdown {
-    position: absolute;
-    top: calc(100% + 10px);
-    right: 0;
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 18px;
-    min-width: 180px;
-    box-shadow: 0 8px 32px rgba(0,0,0,.12);
-    overflow: hidden;
-    animation: nbDropIn .2s cubic-bezier(.34,1.56,.64,1) both;
-    z-index: 200;
-  }
-  .nb-dropdown-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 12px 16px;
-    font-size: 14px; font-weight: 500;
-    color: var(--text-primary);
-    text-decoration: none;
-    cursor: pointer; border: none; background: none;
-    width: 100%; text-align: left;
-    font-family: system-ui, sans-serif;
-    transition: background .15s;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .nb-dropdown-item:hover { background: var(--bg-secondary); }
-  .nb-dropdown-item.danger { color: var(--accent); }
-  .nb-dropdown-divider { height: 1px; background: var(--border-color); margin: 4px 0; }
-
-  @keyframes nbDropIn {
-    from { opacity: 0; transform: translateY(-8px) scale(.96); }
-    to   { opacity: 1; transform: translateY(0)    scale(1);   }
-  }
-
-  /* Hide text labels on small screens */
-  .nb-upload-label { display: inline; }
+  /* AUTH WRAP */
   .nb-auth-wrap { display: flex; align-items: center; gap: 6px; }
 
   @media (max-width: 480px) {
@@ -212,23 +175,10 @@ function injectStyles() {
 }
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { count } = useCart();
-  const [dropOpen, setDropOpen] = useState(false);
-  const dropRef = useRef(null);
 
   useEffect(() => { injectStyles(); }, []);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handler = (e) => {
-      if (dropRef.current && !dropRef.current.contains(e.target)) {
-        setDropOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   const isAdmin = user?.role === 'admin';
 
@@ -276,119 +226,13 @@ export default function Navbar() {
 
         {/* USER */}
         {user ? (
-          <div className="nb-dropdown-wrap" ref={dropRef}>
-            {/* AVATAR TOGGLE */}
-            <button
-              className="nb-avatar"
-              onClick={() => setDropOpen(v => !v)}
-              aria-label="Account menu"
-              style={{ cursor: 'pointer' }}
-            >
-              {user.avatar
-                ? <img src={user.avatar} alt="" />
-                : user.name?.[0]?.toUpperCase()
-              }
-            </button>
-
-            {/* DROPDOWN */}
-            {dropOpen && (
-              <div className="nb-dropdown" role="menu">
-                {/* User info */}
-                <div style={{ padding: '12px 16px 8px' }}>
-                  <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
-                    {user.name}
-                  </p>
-                  <p style={{ fontSize: 11, color: 'var(--text-tertiary)', marginTop: 2 }}>
-                    {user.email}
-                  </p>
-                  {isAdmin && (
-                    <span style={{
-                      display: 'inline-block', marginTop: 6,
-                      fontSize: 10, fontWeight: 700, letterSpacing: .5,
-                      background: 'rgba(230,0,35,.1)', color: 'var(--accent)',
-                      padding: '2px 8px', borderRadius: 999,
-                    }}>
-                      ADMIN
-                    </span>
-                  )}
-                </div>
-
-                <div className="nb-dropdown-divider" />
-
-                <Link
-                  href="/profile"
-                  className="nb-dropdown-item"
-                  onClick={() => setDropOpen(false)}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                  </svg>
-                  Profile
-                </Link>
-
-                <Link
-                  href="/wishlist"
-                  className="nb-dropdown-item"
-                  onClick={() => setDropOpen(false)}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                  </svg>
-                  Saved
-                </Link>
-
-                <Link
-                  href="/orders"
-                  className="nb-dropdown-item"
-                  onClick={() => setDropOpen(false)}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/>
-                    <line x1="16" y1="17" x2="8" y2="17"/>
-                  </svg>
-                  Orders
-                </Link>
-
-                {/* Admin-only upload in dropdown too */}
-                {isAdmin && (
-                  <Link
-                    href="/upload"
-                    className="nb-dropdown-item"
-                    onClick={() => setDropOpen(false)}
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="16 16 12 12 8 16"/>
-                      <line x1="12" y1="12" x2="12" y2="21"/>
-                      <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
-                    </svg>
-                    Upload product
-                  </Link>
-                )}
-
-                <div className="nb-dropdown-divider" />
-
-                <button
-                  className="nb-dropdown-item danger"
-                  onClick={() => { logout(); setDropOpen(false); }}
-                >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                    <polyline points="16 17 21 12 16 7"/>
-                    <line x1="21" y1="12" x2="9" y2="12"/>
-                  </svg>
-                  Log out
-                </button>
-              </div>
-            )}
-          </div>
+          /* Avatar links directly to profile page */
+          <Link href="/profile" className="nb-avatar" aria-label="Go to profile">
+            {user.avatar
+              ? <img src={user.avatar} alt="" />
+              : user.name?.[0]?.toUpperCase()
+            }
+          </Link>
         ) : (
           <div className="nb-auth-wrap">
             <Link href="/login"  className="nb-login">Log in</Link>
