@@ -46,7 +46,7 @@ const STYLES = `
   .cp-body {
     max-width: 1000px;
     margin: 0 auto;
-    padding: 24px 16px 120px;
+    padding: 24px 16px 60px;
     display: grid;
     grid-template-columns: 1fr 300px;
     gap: 20px;
@@ -149,7 +149,6 @@ const STYLES = `
     border: none;
     background: none;
     color: var(--text-tertiary);
-    font-size: 18px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -213,7 +212,11 @@ const STYLES = `
     box-shadow: 0 4px 18px rgba(230,0,35,.25);
     transition: background .18s, transform .18s, box-shadow .18s;
   }
-  .cp-cta:hover { background: #ad081b; transform: translateY(-2px); box-shadow: 0 8px 26px rgba(230,0,35,.33); }
+  .cp-cta:hover {
+    background: #ad081b;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 26px rgba(230,0,35,.33);
+  }
 
   .cp-clear {
     width: 100%;
@@ -228,7 +231,11 @@ const STYLES = `
     cursor: pointer;
     transition: border-color .18s, color .18s, background .18s;
   }
-  .cp-clear:hover { border-color: var(--text-secondary); color: var(--text-primary); background: var(--bg-secondary); }
+  .cp-clear:hover {
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+  }
 
   .cp-continue {
     display: block;
@@ -243,13 +250,14 @@ const STYLES = `
   .cp-continue:hover { color: var(--text-primary); }
 
   /* ── MOBILE BOTTOM BAR ── */
+  /* No bottom nav anymore — sits flush at screen bottom with safe area */
   .cp-mobile-bar {
     display: none;
     position: fixed;
     bottom: 0; left: 0; right: 0;
     background: var(--bg-primary);
     border-top: 1px solid var(--border-color);
-    padding: 12px 16px 20px;
+    padding: 12px 16px env(safe-area-inset-bottom, 16px);
     z-index: 20;
   }
   .cp-mobile-bar-inner {
@@ -322,20 +330,21 @@ const STYLES = `
 
   /* ── RESPONSIVE ── */
 
-  /* Tablet: tighten gap, smaller summary */
+  /* Tablet */
   @media (max-width: 800px) {
     .cp-body {
       grid-template-columns: 1fr 260px;
       gap: 16px;
-      padding: 20px 12px 140px;
+      padding: 20px 12px 40px;
     }
   }
 
-  /* Mobile: single column, hide sidebar summary, show bottom bar */
+  /* Mobile — single column, hide sidebar, show bottom bar */
   @media (max-width: 640px) {
     .cp-body {
       grid-template-columns: 1fr;
-      padding: 16px 12px 160px;
+      /* enough room for the fixed bottom bar (~120px) */
+      padding: 16px 12px 130px;
       gap: 10px;
     }
     .cp-summary { display: none; }
@@ -445,9 +454,7 @@ export default function CartPage() {
                 <p className="cp-item-total">
                   KSh {(item.price * item.quantity).toLocaleString()}
                 </p>
-
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {/* QTY */}
                   <div className="cp-qty">
                     <button
                       className="cp-qty-btn"
@@ -461,15 +468,15 @@ export default function CartPage() {
                       aria-label="Increase"
                     >+</button>
                   </div>
-
-                  {/* REMOVE */}
                   <button
                     className="cp-remove"
                     onClick={() => removeFromCart(item._id)}
                     aria-label="Remove item"
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
                     </svg>
                   </button>
                 </div>
@@ -482,7 +489,7 @@ export default function CartPage() {
         <div className="cp-summary fu" style={{ animationDelay: '.1s' }}>
           <p className="cp-summary-title">Order Summary</p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginBottom: 4 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 4 }}>
             {cart.map((item) => (
               <div key={item._id} className="cp-summary-row">
                 <span style={{

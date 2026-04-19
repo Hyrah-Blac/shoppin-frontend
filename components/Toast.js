@@ -93,7 +93,7 @@ const STYLES = `
   /* Mobile — above bottom nav, stretch edge to edge */
   @media (max-width: 700px) {
     .pin-toast-wrap {
-      bottom: 84px;
+      bottom: 24px;
       left: 12px;
       right: 12px;
       transform: none;

@@ -70,7 +70,7 @@ const STYLES = `
   /* Mobile — above bottom nav */
   @media (max-width: 700px) {
     .btt-btn {
-      bottom: 84px;
+      bottom: 24px;
       right: 14px;
       width: 44px;
       height: 44px;
