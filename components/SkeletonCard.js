@@ -1,26 +1,84 @@
-export default function SkeletonCard() {
+const STYLES = `
+  @keyframes pin-shimmer {
+    0%   { background-position: -600px 0; }
+    100% { background-position:  600px 0; }
+  }
+
+  .pin-skel {
+    background: linear-gradient(
+      90deg,
+      var(--bg-secondary) 25%,
+      var(--bg-tertiary)  50%,
+      var(--bg-secondary) 75%
+    );
+    background-size: 600px 100%;
+    animation: pin-shimmer 1.6s ease-in-out infinite;
+  }
+`;
+
+function injectStyles() {
+  if (typeof document === 'undefined') return;
+  if (document.getElementById('pin-skel-styles')) return;
+  const s = document.createElement('style');
+  s.id = 'pin-skel-styles';
+  s.textContent = STYLES;
+  document.head.appendChild(s);
+}
+
+export default function SkeletonCard({ height }) {
+  injectStyles();
+
+  // Randomise card height so masonry looks natural like Pinterest
+  const imgH = height ?? (Math.floor(Math.random() * 3) === 0 ? 320 : Math.floor(Math.random() * 2) === 0 ? 240 : 180);
+
   return (
-    <div style={{ breakInside: 'avoid', marginBottom: 12 }}>
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: -1000px 0; }
-          100% { background-position: 1000px 0; }
-        }
-        .skeleton {
-          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-          background-size: 1000px 100%;
-          animation: shimmer 2s infinite;
-        }
-      `}</style>
+    <div style={{ breakInside: 'avoid', marginBottom: 16 }}>
+
+      {/* IMAGE BLOCK */}
       <div
-        className="skeleton"
+        className="pin-skel"
         style={{
-          width: '100%', height: '200px',
-          borderRadius: 16, marginBottom: 8,
+          width: '100%',
+          height: imgH,
+          borderRadius: 18,
+          marginBottom: 10,
         }}
       />
-      <div className="skeleton" style={{ height: 14, marginBottom: 6, borderRadius: 8, width: '80%' }} />
-      <div className="skeleton" style={{ height: 12, borderRadius: 8, width: '60%' }} />
+
+      {/* TITLE LINE */}
+      <div
+        className="pin-skel"
+        style={{
+          height: 13,
+          borderRadius: 999,
+          width: `${68 + Math.floor(Math.random() * 24)}%`,
+          marginBottom: 7,
+        }}
+      />
+
+      {/* SUBTITLE / PRICE LINE */}
+      <div
+        className="pin-skel"
+        style={{
+          height: 11,
+          borderRadius: 999,
+          width: `${38 + Math.floor(Math.random() * 22)}%`,
+          marginBottom: 10,
+        }}
+      />
+
+      {/* AVATAR + NAME ROW — mimics Pinterest's seller row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+        <div
+          className="pin-skel"
+          style={{ width: 26, height: 26, borderRadius: '50%', flexShrink: 0 }}
+        />
+        <div
+          className="pin-skel"
+          style={{ height: 10, borderRadius: 999, width: `${40 + Math.floor(Math.random() * 30)}%` }}
+        />
+      </div>
+
     </div>
   );
 }

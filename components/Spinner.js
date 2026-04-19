@@ -1,27 +1,54 @@
-export default function Spinner() {
-  return (
+export default function Spinner({ size = 'md', fullPage = false }) {
+  const dims = { sm: 6, md: 8, lg: 11 };
+  const dot = dims[size] ?? dims.md;
+
+  const inner = (
     <div style={{
-      display: 'flex', gap: 6, alignItems: 'center',
-      justifyContent: 'center', padding: '20px 0',
+      display: 'flex',
+      gap: dot * 0.75,
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: fullPage ? 0 : '20px 0',
     }}>
       <style>{`
-        @keyframes bounce {
-          0%, 80%, 100% { transform: translateY(0); opacity: 1; }
-          40% { transform: translateY(-12px); opacity: 0.7; }
+        @keyframes pin-bounce {
+          0%, 100% { transform: scale(1);     opacity: 1;   }
+          40%       { transform: scale(1.35);  opacity: 1;   }
+          60%       { transform: scale(0.65);  opacity: .55; }
         }
-        .spinner-dot {
-          width: 8px; height: 8px;
+        .pin-dot {
           border-radius: 50%;
           background: #e60023;
-          animation: bounce 1.4s infinite;
+          animation: pin-bounce 1.2s cubic-bezier(.36,.07,.19,.97) infinite;
+          flex-shrink: 0;
         }
-        .spinner-dot:nth-child(1) { animation-delay: 0s; }
-        .spinner-dot:nth-child(2) { animation-delay: 0.2s; }
-        .spinner-dot:nth-child(3) { animation-delay: 0.4s; }
+        .pin-dot:nth-child(1) { animation-delay: 0s;    }
+        .pin-dot:nth-child(2) { animation-delay: 0.15s; }
+        .pin-dot:nth-child(3) { animation-delay: 0.30s; }
       `}</style>
-      <div className="spinner-dot"></div>
-      <div className="spinner-dot"></div>
-      <div className="spinner-dot"></div>
+      {[0, 1, 2].map((i) => (
+        <div
+          key={i}
+          className="pin-dot"
+          style={{ width: dot, height: dot }}
+        />
+      ))}
     </div>
   );
+
+  if (fullPage) return (
+    <div style={{
+      position: 'fixed',
+      inset: 0,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'var(--bg-primary)',
+      zIndex: 9999,
+    }}>
+      {inner}
+    </div>
+  );
+
+  return inner;
 }

@@ -59,20 +59,38 @@ input::placeholder, textarea::placeholder {
   color: var(--text-tertiary);
 }
 
+/* ── PINTEREST SCROLLBAR ── */
+
+/* Make it ultra thin like Pinterest */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
+/* Invisible track — Pinterest shows no rail */
 ::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
+  background: transparent;
 }
 
+/* Rounded thumb — appears only on scroll */
 ::-webkit-scrollbar-thumb {
-  background: var(--accent);
-  border-radius: 4px;
+  background: var(--border-color);
+  border-radius: 999px;
+  transition: background 0.2s;
 }
 
+/* Slightly darker on hover — still subtle */
 ::-webkit-scrollbar-thumb:hover {
-  background: #cc0020;
+  background: var(--text-tertiary);
+}
+
+/* Corner between horizontal + vertical scrollbars */
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
 }
