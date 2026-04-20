@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -202,6 +202,35 @@ const STYLES = `
   .masonry-grid { display: flex; gap: 12px; width: 100%; }
   .masonry-col  { display: flex; flex-direction: column; gap: 12px; }
 
+  /* ── SKELETON ── */
+  @keyframes pfShimmer {
+    0%   { background-position: -600px 0; }
+    100% { background-position:  600px 0; }
+  }
+  .pf-skeleton {
+    border-radius: 20px; overflow: hidden;
+    background: linear-gradient(90deg,
+      var(--bg-secondary) 25%,
+      var(--border-color) 50%,
+      var(--bg-secondary) 75%
+    );
+    background-size: 600px 100%;
+    animation: pfShimmer 1.4s infinite linear;
+  }
+  .pf-skeleton-hero {
+    display: flex; flex-direction: column;
+    align-items: center; padding: 40px 20px 28px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+  }
+  .pf-sk-circle {
+    width: 108px; height: 108px; border-radius: 50%;
+    margin-bottom: 16px;
+  }
+  .pf-sk-line {
+    border-radius: 8px; margin-bottom: 10px;
+  }
+
   /* ── EMPTY STATES ── */
   .pf-empty {
     display: flex; flex-direction: column;
@@ -270,6 +299,45 @@ const STYLES = `
     letter-spacing: .3px;
   }
 
+  /* ── ORDER PROGRESS ── */
+  .pf-order-progress {
+    display: flex; align-items: center;
+    gap: 0; margin-top: 10px;
+  }
+  .pf-op-step {
+    display: flex; flex-direction: column;
+    align-items: center; flex: 1; position: relative;
+  }
+  .pf-op-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border-color);
+    border: 1.5px solid var(--border-color);
+    z-index: 1; flex-shrink: 0;
+    transition: background .2s, border-color .2s;
+  }
+  .pf-op-dot.done {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .pf-op-dot.active {
+    background: var(--bg-primary);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(230,0,35,.2);
+  }
+  .pf-op-line {
+    position: absolute; top: 3.5px; left: 50%;
+    height: 1.5px; width: 100%;
+    background: var(--border-color);
+    z-index: 0;
+  }
+  .pf-op-line.done { background: var(--accent); }
+  .pf-op-label {
+    font-size: 9px; color: var(--text-tertiary);
+    margin-top: 4px; white-space: nowrap;
+    font-weight: 600;
+  }
+  .pf-op-label.active { color: var(--accent); }
+
   /* ── ADMIN TILES ── */
   .pf-admin-grid {
     display: grid;
@@ -302,12 +370,26 @@ const STYLES = `
     font-size: 12px; color: var(--text-secondary); line-height: 1.45;
   }
 
+  /* ── ERROR STATE ── */
+  .pf-error {
+    display: flex; flex-direction: column;
+    align-items: center; padding: 60px 20px; text-align: center;
+  }
+  .pf-error-title {
+    font-size: 15px; font-weight: 700;
+    color: var(--text-primary); margin-bottom: 6px;
+  }
+  .pf-error-sub {
+    font-size: 13px; color: var(--text-secondary);
+    margin-bottom: 18px;
+  }
+
   /* ── ANIMATIONS ── */
   @keyframes pfFadeUp {
     from { opacity: 0; transform: translateY(14px); }
     to   { opacity: 1; transform: translateY(0); }
   }
-  .pf-hero  { animation: pfFadeUp .38s ease both; }
+  .pf-hero    { animation: pfFadeUp .38s ease both; }
   .pf-content { animation: pfFadeUp .42s ease .06s both; }
 
   /* ── RESPONSIVE ── */
@@ -319,6 +401,7 @@ const STYLES = `
     .pf-content { padding: 20px 12px 60px; }
     .masonry-grid { gap: 8px; }
     .masonry-col  { gap: 8px; }
+    .pf-op-label { display: none; }
   }
   @media (max-width: 360px) {
     .pf-stat-num { font-size: 17px; }
@@ -336,13 +419,14 @@ function injectStyles() {
   document.head.appendChild(s);
 }
 
+/* ── STATUS BADGE ── */
 function StatusBadge({ status }) {
   const map = {
-    pending:   { bg: 'rgba(255,170,0,.15)',  color: '#b37700'  },
-    confirmed: { bg: 'rgba(0,120,255,.12)',  color: '#0057b3'  },
-    shipped:   { bg: 'rgba(120,0,255,.12)',  color: '#5500cc'  },
-    delivered: { bg: 'rgba(0,180,80,.13)',   color: '#006830'  },
-    cancelled: { bg: 'rgba(230,0,35,.1)',    color: '#e60023'  },
+    pending:   { bg: 'rgba(255,170,0,.15)',  color: '#b37700' },
+    confirmed: { bg: 'rgba(0,120,255,.12)',  color: '#0057b3' },
+    shipped:   { bg: 'rgba(120,0,255,.12)',  color: '#5500cc' },
+    delivered: { bg: 'rgba(0,180,80,.13)',   color: '#006830' },
+    cancelled: { bg: 'rgba(230,0,35,.1)',    color: '#e60023' },
   };
   const s = map[status] || map.pending;
   return (
@@ -352,16 +436,92 @@ function StatusBadge({ status }) {
   );
 }
 
+/* ── ORDER PROGRESS BAR ── */
+const ORDER_STEPS = ['placed', 'confirmed', 'shipped', 'delivered'];
+const STATUS_INDEX = {
+  pending:   0,
+  confirmed: 1,
+  shipped:   2,
+  delivered: 3,
+  cancelled: -1,
+};
+
+function OrderProgress({ status }) {
+  if (status === 'cancelled') return null;
+  const current = STATUS_INDEX[status] ?? 0;
+  return (
+    <div className="pf-order-progress" role="list" aria-label="Order progress">
+      {ORDER_STEPS.map((step, i) => {
+        const done   = i < current;
+        const active = i === current;
+        return (
+          <div key={step} className="pf-op-step" role="listitem">
+            {i < ORDER_STEPS.length - 1 && (
+              <div className={`pf-op-line${done ? ' done' : ''}`} />
+            )}
+            <div className={`pf-op-dot${done ? ' done' : active ? ' active' : ''}`} />
+            <span className={`pf-op-label${active ? ' active' : ''}`}>
+              {step.charAt(0).toUpperCase() + step.slice(1)}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ── SKELETON SCREENS ── */
+function SkeletonHero() {
+  return (
+    <div className="pf-skeleton-hero">
+      <div className="pf-skeleton pf-sk-circle" />
+      <div className="pf-skeleton pf-sk-line" style={{ width: 140, height: 22 }} />
+      <div className="pf-skeleton pf-sk-line" style={{ width: 190, height: 14 }} />
+      <div className="pf-skeleton pf-sk-line" style={{ width: 80, height: 14, marginBottom: 20 }} />
+      <div style={{ display: 'flex', gap: 0, width: '100%', maxWidth: 340, borderRadius: 16, overflow: 'hidden', border: '1px solid var(--border-color)' }}>
+        {[1,2,3].map(i => (
+          <div key={i} className="pf-skeleton" style={{ flex: 1, height: 58, borderRadius: 0 }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SkeletonCards() {
+  const heights = [220, 280, 200, 260, 240, 300, 210, 250];
+  return (
+    <Masonry breakpointCols={breakpoints} className="masonry-grid" columnClassName="masonry-col">
+      {heights.map((h, i) => (
+        <div key={i} className="pf-skeleton" style={{ height: h, borderRadius: 20 }} />
+      ))}
+    </Masonry>
+  );
+}
+
+function SkeletonOrders() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 700, margin: '0 auto' }}>
+      {[1, 2, 3].map(i => (
+        <div key={i} className="pf-skeleton" style={{ height: 90, borderRadius: 20 }} />
+      ))}
+    </div>
+  );
+}
+
+/* ── MAIN COMPONENT ── */
 export default function ProfilePage() {
   const { user, loading, logout, setAuthUser } = useAuth();
   const router = useRouter();
   const { addToast } = useToast();
 
-  const [wishlisted, setWishlisted]   = useState([]);
-  const [orders, setOrders]           = useState([]);
-  const [tab, setTab]                 = useState('saved');
-  const [fetching, setFetching]       = useState(true);
-  const [uploading, setUploading]     = useState(false);
+  const [wishlisted, setWishlisted]       = useState([]);
+  const [orders, setOrders]               = useState([]);
+  const [tab, setTab]                     = useState('saved');
+  const [fetching, setFetching]           = useState(true);
+  const [uploading, setUploading]         = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [wishlistError, setWishlistError] = useState(false);
+  const [ordersError, setOrdersError]     = useState(false);
 
   useEffect(() => { injectStyles(); }, []);
 
@@ -371,38 +531,74 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([
-      api.get('/wishlist/my').then(r => setWishlisted(r.data)),
-      api.get('/orders/my').then(r => setOrders(r.data)).catch(() => setOrders([])),
-    ]).finally(() => setFetching(false));
+    setWishlistError(false);
+    setOrdersError(false);
+
+    const wishlistReq = api.get('/wishlist/my')
+      .then(r => setWishlisted(r.data))
+      .catch(() => setWishlistError(true));
+
+    const ordersReq = api.get('/orders/my')
+      .then(r => setOrders(r.data))
+      .catch(() => setOrdersError(true));
+
+    Promise.all([wishlistReq, ordersReq]).finally(() => setFetching(false));
   }, [user]);
 
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Client-side validation
+    if (file.size > 5 * 1024 * 1024) {
+      addToast('Image must be under 5 MB', 'error');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      addToast('Please select an image file', 'error');
+      return;
+    }
+
+    // Optimistic local preview
+    const localUrl = URL.createObjectURL(file);
+    setAvatarPreview(localUrl);
     setUploading(true);
+
     try {
       const uploaded = await uploadToCloudinary(file);
       await api.put('/users/me', { avatar: uploaded.url });
       setAuthUser({ ...user, avatar: uploaded.url });
+      setAvatarPreview(null); // hand off to user.avatar
       addToast('Profile picture updated!', 'success');
     } catch {
+      setAvatarPreview(null); // revert preview
       addToast('Failed to upload image', 'error');
-    } finally { setUploading(false); }
+    } finally {
+      setUploading(false);
+      URL.revokeObjectURL(localUrl);
+    }
   };
 
+  /* ── SKELETON WHILE LOADING ── */
   if (loading || fetching) return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      minHeight: '60vh', color: 'var(--text-tertiary)',
-      fontFamily: 'system-ui', fontSize: 14,
-    }}>
-      Loading…
+    <div className="pf">
+      <SkeletonHero />
+      <div className="pf-tabs" style={{ pointerEvents: 'none', opacity: .4 }}>
+        <div className="pf-tabs-inner">
+          {['Saved', 'Orders'].map(l => (
+            <button key={l} className="pf-tab-btn">{l}</button>
+          ))}
+        </div>
+      </div>
+      <div className="pf-content"><SkeletonCards /></div>
     </div>
   );
+
   if (!user) return null;
 
-  const isAdmin = user.role === 'admin';
+  const isAdmin    = user.role === 'admin';
+  const displayAvatar = avatarPreview || user.avatar;
+
   const tabs = [
     { key: 'saved',  label: `Saved (${wishlisted.length})` },
     { key: 'orders', label: `Orders (${orders.length})` },
@@ -428,19 +624,19 @@ export default function ProfilePage() {
           {/* AVATAR */}
           <label className="pf-avatar-wrap" style={{ opacity: uploading ? .6 : 1 }}>
             <div className="pf-avatar">
-              {user.avatar
-                ? <img src={user.avatar} alt="" />
+              {displayAvatar
+                ? <img src={displayAvatar} alt={`${user.name}'s avatar`} />
                 : user.name?.[0]?.toUpperCase()
               }
             </div>
-            <div className="pf-avatar-overlay">
+            <div className="pf-avatar-overlay" aria-hidden="true">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                 stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
                 <circle cx="12" cy="13" r="4"/>
               </svg>
             </div>
-            <div className="pf-avatar-cam">
+            <div className="pf-avatar-cam" aria-hidden="true">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
                 stroke="var(--bg-primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -451,6 +647,7 @@ export default function ProfilePage() {
               type="file" accept="image/*"
               onChange={handleAvatarUpload}
               disabled={uploading}
+              aria-label="Upload profile picture"
               style={{ display: 'none' }}
             />
           </label>
@@ -461,8 +658,8 @@ export default function ProfilePage() {
 
           {/* ADMIN BADGE */}
           {isAdmin && (
-            <div className="pf-admin-badge">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+            <div className="pf-admin-badge" role="status" aria-label="Admin account">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M13 10V3L4 14h7v7l9-11h-7z"/>
               </svg>
               ADMIN
@@ -470,15 +667,15 @@ export default function ProfilePage() {
           )}
 
           {/* STATS */}
-          <div className="pf-stats">
+          <div className="pf-stats" role="group" aria-label="Profile statistics">
             {[
               { num: wishlisted.length, label: 'Saved' },
               { num: orders.length,     label: 'Orders' },
               { num: orders.filter(o => o.status === 'delivered').length, label: 'Delivered' },
             ].map((s) => (
               <div key={s.label} className="pf-stat">
-                <div className="pf-stat-num">{s.num}</div>
-                <div className="pf-stat-label">{s.label}</div>
+                <div className="pf-stat-num" aria-label={`${s.num} ${s.label}`}>{s.num}</div>
+                <div className="pf-stat-label" aria-hidden="true">{s.label}</div>
               </div>
             ))}
           </div>
@@ -488,7 +685,7 @@ export default function ProfilePage() {
             {isAdmin && (
               <Link href="/upload" className="pf-btn-red">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2.8" strokeLinecap="round">
+                  stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" aria-hidden="true">
                   <line x1="12" y1="5" x2="12" y2="19"/>
                   <line x1="5"  y1="12" x2="19" y2="12"/>
                 </svg>
@@ -500,7 +697,7 @@ export default function ProfilePage() {
               onClick={() => { logout(); router.push('/'); }}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                 <polyline points="16 17 21 12 16 7"/>
                 <line x1="21" y1="12" x2="9" y2="12"/>
@@ -513,10 +710,18 @@ export default function ProfilePage() {
 
       {/* ── TABS ── */}
       <div className="pf-tabs">
-        <div className="pf-tabs-inner">
+        <div
+          className="pf-tabs-inner"
+          role="tablist"
+          aria-label="Profile sections"
+        >
           {tabs.map((t) => (
             <button
               key={t.key}
+              role="tab"
+              aria-selected={tab === t.key}
+              aria-controls={`tabpanel-${t.key}`}
+              id={`tab-${t.key}`}
               className={`pf-tab-btn${tab === t.key ? ' active' : ''}`}
               onClick={() => setTab(t.key)}
             >
@@ -530,111 +735,168 @@ export default function ProfilePage() {
       <div className="pf-content">
 
         {/* SAVED */}
-        {tab === 'saved' && (
-          wishlisted.length > 0 ? (
-            <Masonry breakpointCols={breakpoints} className="masonry-grid" columnClassName="masonry-col">
-              {wishlisted.map((p) => (
-                <ProductCard
-                  key={p._id}
-                  product={p}
-                  onRemoveWishlist={() => setWishlisted(wishlisted.filter(w => w._id !== p._id))}
-                />
-              ))}
-            </Masonry>
-          ) : (
-            <div className="pf-empty">
-              <div className="pf-empty-icon">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-                  stroke="var(--text-tertiary)" strokeWidth="1.5"
-                  strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-                </svg>
+        <div
+          role="tabpanel"
+          id="tabpanel-saved"
+          aria-labelledby="tab-saved"
+          hidden={tab !== 'saved'}
+        >
+          {tab === 'saved' && (
+            wishlistError ? (
+              <div className="pf-error">
+                <p className="pf-error-title">Couldn't load saved items</p>
+                <p className="pf-error-sub">Check your connection and try again.</p>
+                <button
+                  className="pf-btn-ghost"
+                  onClick={() => {
+                    setWishlistError(false);
+                    api.get('/wishlist/my')
+                      .then(r => setWishlisted(r.data))
+                      .catch(() => setWishlistError(true));
+                  }}
+                >
+                  Retry
+                </button>
               </div>
-              <h2 className="pf-empty-title">Nothing saved yet</h2>
-              <p className="pf-empty-sub">Tap the heart on any product to save it here.</p>
-              <Link href="/" className="pf-btn-red" style={{ textDecoration: 'none' }}>
-                Explore products
-              </Link>
-            </div>
-          )
-        )}
+            ) : wishlisted.length > 0 ? (
+              <Masonry breakpointCols={breakpoints} className="masonry-grid" columnClassName="masonry-col">
+                {wishlisted.map((p) => (
+                  <ProductCard
+                    key={p._id}
+                    product={p}
+                    onRemoveWishlist={() => setWishlisted(wishlisted.filter(w => w._id !== p._id))}
+                  />
+                ))}
+              </Masonry>
+            ) : (
+              <div className="pf-empty">
+                <div className="pf-empty-icon" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                    stroke="var(--text-tertiary)" strokeWidth="1.5"
+                    strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                  </svg>
+                </div>
+                <h2 className="pf-empty-title">Nothing saved yet</h2>
+                <p className="pf-empty-sub">Tap the heart on any product to save it here.</p>
+                <Link href="/" className="pf-btn-red" style={{ textDecoration: 'none' }}>
+                  Explore products
+                </Link>
+              </div>
+            )
+          )}
+        </div>
 
         {/* ORDERS */}
-        {tab === 'orders' && (
-          orders.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 700, margin: '0 auto' }}>
-              {orders.map((order) => (
-                <Link key={order._id} href={`/orders/${order._id}`} className="pf-order-card">
-                  {order.items?.[0]?.product?.images?.[0] && (
-                    <img
-                      className="pf-order-img"
-                      src={order.items[0].product.images[0]}
-                      alt=""
-                    />
-                  )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p className="pf-order-id">#{order._id?.slice(-8).toUpperCase()}</p>
-                    <p className="pf-order-name">
-                      {order.items?.map(i => i.product?.name).filter(Boolean).join(', ') || 'Order'}
-                    </p>
-                    <p className="pf-order-date">
-                      {new Date(order.createdAt).toLocaleDateString('en-US', {
-                        year: 'numeric', month: 'short', day: 'numeric',
-                      })}
-                    </p>
-                  </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <p className="pf-order-total">KSh {order.total?.toLocaleString()}</p>
-                    <StatusBadge status={order.status} />
-                  </div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="pf-empty">
-              <div className="pf-empty-icon">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
-                  stroke="var(--text-tertiary)" strokeWidth="1.5"
-                  strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-                  <line x1="3" y1="6" x2="21" y2="6"/>
-                  <path d="M16 10a4 4 0 0 1-8 0"/>
-                </svg>
+        <div
+          role="tabpanel"
+          id="tabpanel-orders"
+          aria-labelledby="tab-orders"
+          hidden={tab !== 'orders'}
+        >
+          {tab === 'orders' && (
+            ordersError ? (
+              <div className="pf-error">
+                <p className="pf-error-title">Couldn't load orders</p>
+                <p className="pf-error-sub">Check your connection and try again.</p>
+                <button
+                  className="pf-btn-ghost"
+                  onClick={() => {
+                    setOrdersError(false);
+                    api.get('/orders/my')
+                      .then(r => setOrders(r.data))
+                      .catch(() => setOrdersError(true));
+                  }}
+                >
+                  Retry
+                </button>
               </div>
-              <h2 className="pf-empty-title">No orders yet</h2>
-              <p className="pf-empty-sub">When you place an order it will show up here.</p>
-              <Link href="/" className="pf-btn-red" style={{ textDecoration: 'none' }}>
-                Start shopping
-              </Link>
-            </div>
-          )
-        )}
+            ) : orders.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 700, margin: '0 auto' }}>
+                {orders.map((order) => (
+                  <Link key={order._id} href={`/orders/${order._id}`} className="pf-order-card">
+                    {order.items?.[0]?.product?.images?.[0] && (
+                      <img
+                        className="pf-order-img"
+                        src={order.items[0].product.images[0]}
+                        alt={order.items[0].product?.name || 'Product'}
+                      />
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p className="pf-order-id">#{order._id?.slice(-8).toUpperCase()}</p>
+                      <p className="pf-order-name">
+                        {order.items?.map(i => i.product?.name).filter(Boolean).join(', ') || 'Order'}
+                      </p>
+                      <p className="pf-order-date">
+                        {new Date(order.createdAt).toLocaleDateString('en-KE', {
+                          year: 'numeric', month: 'short', day: 'numeric',
+                        })}
+                      </p>
+                      <OrderProgress status={order.status} />
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <p className="pf-order-total">KSh {order.total?.toLocaleString()}</p>
+                      <StatusBadge status={order.status} />
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="pf-empty">
+                <div className="pf-empty-icon" aria-hidden="true">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                    stroke="var(--text-tertiary)" strokeWidth="1.5"
+                    strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                    <line x1="3" y1="6" x2="21" y2="6"/>
+                    <path d="M16 10a4 4 0 0 1-8 0"/>
+                  </svg>
+                </div>
+                <h2 className="pf-empty-title">No orders yet</h2>
+                <p className="pf-empty-sub">When you place an order it will show up here.</p>
+                <Link href="/" className="pf-btn-red" style={{ textDecoration: 'none' }}>
+                  Start shopping
+                </Link>
+              </div>
+            )
+          )}
+        </div>
 
         {/* ADMIN */}
-        {tab === 'admin' && isAdmin && (
-          <div>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24, textAlign: 'center' }}>
-              Manage your store from here.
-            </p>
-            <div className="pf-admin-grid">
-              {[
-                { href: '/admin',          icon: '📊', label: 'Dashboard',      desc: 'Overview of store activity',     bg: 'rgba(230,0,35,.1)'  },
-                { href: '/admin/products', icon: '📦', label: 'Products',       desc: 'Manage and edit listings',       bg: 'rgba(0,120,255,.1)' },
-                { href: '/admin/orders',   icon: '🧾', label: 'Orders',         desc: 'View and update order statuses', bg: 'rgba(0,180,80,.1)'  },
-                { href: '/admin/users',    icon: '👥', label: 'Users',          desc: 'Browse and manage accounts',     bg: 'rgba(120,0,255,.1)' },
-                { href: '/upload',         icon: '⬆️', label: 'Upload Product', desc: 'Add a new product to the store', bg: 'rgba(255,140,0,.1)' },
-              ].map((tile) => (
-                <Link key={tile.href} href={tile.href} className="pf-admin-tile">
-                  <div className="pf-admin-tile-icon" style={{ background: tile.bg }}>
-                    {tile.icon}
-                  </div>
-                  <p className="pf-admin-tile-title">{tile.label}</p>
-                  <p className="pf-admin-tile-desc">{tile.desc}</p>
-                </Link>
-              ))}
-            </div>
+        {isAdmin && (
+          <div
+            role="tabpanel"
+            id="tabpanel-admin"
+            aria-labelledby="tab-admin"
+            hidden={tab !== 'admin'}
+          >
+            {tab === 'admin' && (
+              <div>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 24, textAlign: 'center' }}>
+                  Manage your store from here.
+                </p>
+                <div className="pf-admin-grid">
+                  {[
+                    { href: '/admin',          icon: '📊', label: 'Dashboard',      desc: 'Overview of store activity',     bg: 'rgba(230,0,35,.1)'  },
+                    { href: '/admin/products', icon: '📦', label: 'Products',       desc: 'Manage and edit listings',       bg: 'rgba(0,120,255,.1)' },
+                    { href: '/admin/orders',   icon: '🧾', label: 'Orders',         desc: 'View and update order statuses', bg: 'rgba(0,180,80,.1)'  },
+                    { href: '/admin/users',    icon: '👥', label: 'Users',          desc: 'Browse and manage accounts',     bg: 'rgba(120,0,255,.1)' },
+                    { href: '/upload',         icon: '⬆️', label: 'Upload Product', desc: 'Add a new product to the store', bg: 'rgba(255,140,0,.1)' },
+                  ].map((tile) => (
+                    <Link key={tile.href} href={tile.href} className="pf-admin-tile">
+                      <div className="pf-admin-tile-icon" style={{ background: tile.bg }} aria-hidden="true">
+                        {tile.icon}
+                      </div>
+                      <p className="pf-admin-tile-title">{tile.label}</p>
+                      <p className="pf-admin-tile-desc">{tile.desc}</p>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
+
       </div>
     </div>
   );
