@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Masonry from 'react-masonry-css';
 import ProductCard from '@/components/ProductCard';
 import SkeletonCard from '@/components/SkeletonCard';
@@ -176,7 +176,16 @@ function injectStyles() {
 
 function Feed() {
   const { user } = useAuth();
+  const router = useRouter();
   const isAdmin = user?.role === 'admin';
+
+  // Redirect admins away from the homepage
+  useEffect(() => {
+    if (user?.role === 'admin') router.replace('/admin');
+  }, [user, router]);
+
+  // Prevent any flash of the homepage for admins
+  if (user?.role === 'admin') return null;
 
   const [products, setProducts]       = useState([]);
   const [page, setPage]               = useState(1);
@@ -236,7 +245,6 @@ function Feed() {
     return () => window.removeEventListener('scroll', onScroll);
   }, [hasMore, loading, fetchProducts]);
 
-  /* ── empty state message ── */
   const emptyMessage = search
     ? `No results for "${search}"`
     : category !== 'All'
@@ -246,10 +254,8 @@ function Feed() {
   const emptySub = search
     ? 'Try a different keyword or browse all categories'
     : category !== 'All'
-      ? `Check back later or explore other categories`
-      : isAdmin
-        ? 'Upload your first product to get started'
-        : 'Check back soon for new arrivals';
+      ? 'Check back later or explore other categories'
+      : 'Check back soon for new arrivals';
 
   return (
     <div>
@@ -327,19 +333,6 @@ function Feed() {
             </div>
             <h2 className="hp-empty-title">{emptyMessage}</h2>
             <p className="hp-empty-sub">{emptySub}</p>
-
-            {/* Only show upload CTA to admins */}
-            {isAdmin && (
-              <a href="/upload" className="hp-empty-btn">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2.5"
-                  strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5"  y1="12" x2="19" y2="12"/>
-                </svg>
-                Upload first product
-              </a>
-            )}
           </div>
         )}
 

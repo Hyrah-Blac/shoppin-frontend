@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
 
   .rp * { box-sizing: border-box; margin: 0; padding: 0; }
   .rp {
@@ -13,49 +13,81 @@ const STYLES = `
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--bg-tertiary);
+    background: #f9f9f9;
     padding: 16px;
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
   }
 
   .rp-card {
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 28px;
-    padding: 40px 32px 36px;
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 44px 40px 40px;
     width: 100%;
     max-width: 380px;
     text-align: center;
-    animation: rpFadeUp .42s ease both;
+    border: 1px solid #ebebeb;
+    animation: rpFadeUp .38s cubic-bezier(.22,.68,0,1.2) both;
   }
 
   .rp-logo {
-    font-family: 'Playfair Display', serif;
-    font-size: 32px;
-    font-weight: 900;
-    color: var(--accent);
-    letter-spacing: -.5px;
-    margin-bottom: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    text-decoration: none;
   }
-  .rp-logo-dot {
-    display: inline-block;
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--accent);
-    margin-left: 2px;
-    margin-bottom: 6px;
-    vertical-align: middle;
+
+  .rp-logo-icon {
+    width: 36px;
+    height: 36px;
+    background: #e60023;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
   }
+
+  .rp-logo-icon svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .rp-logo-name {
+    font-size: 20px;
+    font-weight: 700;
+    color: #111;
+    letter-spacing: -0.4px;
+  }
+
+  .rp-logo-name span { color: #e60023; }
+
+  .rp-headline {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111;
+    letter-spacing: -0.5px;
+    margin-bottom: 6px;
+    line-height: 1.25;
+  }
+
   .rp-sub {
     font-size: 14px;
-    color: var(--text-secondary);
+    color: #767676;
     margin-bottom: 28px;
+    font-weight: 400;
+    line-height: 1.5;
   }
 
   .rp-error {
-    background: rgba(230,0,35,.08);
-    border: 1px solid rgba(230,0,35,.2);
-    color: var(--accent);
+    background: #fff5f5;
+    border: 1px solid #ffd7d7;
+    color: #cc0000;
     padding: 10px 14px;
     border-radius: 12px;
     font-size: 13px;
@@ -81,39 +113,44 @@ const STYLES = `
 
   .rp-input {
     width: 100%;
-    height: 50px;
-    background: var(--bg-secondary);
-    border: 1.5px solid var(--border-color);
+    height: 52px;
+    background: #f9f9f9;
+    border: 1.5px solid #ebebeb;
     border-radius: 14px;
     padding: 0 46px 0 16px;
-    font-size: 14px;
-    color: var(--text-primary);
+    font-size: 15px;
+    color: #111;
     outline: none;
-    transition: border-color .18s, box-shadow .18s;
-    font-family: system-ui, -apple-system, sans-serif;
+    transition: border-color .15s, background .15s;
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    font-weight: 400;
   }
   .rp-input.no-icon { padding-right: 16px; }
-  .rp-input::placeholder { color: var(--text-tertiary); }
+  .rp-input::placeholder { color: #aaa; }
   .rp-input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px rgba(230,0,35,.1);
+    border-color: #111;
+    background: #fff;
   }
+  .rp-input:disabled { opacity: .55; }
 
   .rp-eye {
     position: absolute;
     right: 14px;
-    width: 22px; height: 22px;
-    border: none; background: none;
+    width: 22px;
+    height: 22px;
+    border: none;
+    background: none;
     cursor: pointer;
-    color: var(--text-tertiary);
-    display: flex; align-items: center; justify-content: center;
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 0;
     transition: color .15s;
     flex-shrink: 0;
   }
-  .rp-eye:hover { color: var(--text-secondary); }
+  .rp-eye:hover { color: #555; }
 
-  /* Password strength bar */
   .rp-strength {
     display: flex;
     gap: 4px;
@@ -123,96 +160,98 @@ const STYLES = `
     flex: 1;
     height: 3px;
     border-radius: 999px;
-    background: var(--border-color);
-    transition: background .3s;
+    background: #ebebeb;
+    transition: background .25s;
   }
   .rp-strength-label {
     text-align: left;
     font-size: 11px;
     font-weight: 600;
     margin-top: -6px;
-    transition: color .3s;
+    transition: color .25s;
   }
 
   .rp-cta {
     width: 100%;
-    height: 50px;
-    background: var(--accent);
+    height: 52px;
+    background: #e60023;
     color: #fff;
     border: none;
     border-radius: 999px;
     font-size: 15px;
     font-weight: 700;
-    letter-spacing: .3px;
+    letter-spacing: .1px;
     cursor: pointer;
     margin-top: 4px;
-    box-shadow: 0 4px 18px rgba(230,0,35,.25);
-    transition: background .18s, transform .18s, box-shadow .18s, opacity .18s;
+    transition: background .15s, transform .12s, opacity .15s;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
   }
   .rp-cta:hover:not(:disabled) {
-    background: #ad081b;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 26px rgba(230,0,35,.33);
+    background: #c0001e;
+    transform: scale(1.015);
   }
-  .rp-cta:disabled { opacity: .6; cursor: not-allowed; }
+  .rp-cta:active:not(:disabled) { transform: scale(0.985); }
+  .rp-cta:disabled { opacity: .5; cursor: not-allowed; }
 
   .rp-divider {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin: 20px 0;
-    color: var(--text-tertiary);
+    margin: 22px 0;
+    color: #bbb;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: .4px;
+    text-transform: uppercase;
   }
-  .rp-divider::before, .rp-divider::after {
+  .rp-divider::before,
+  .rp-divider::after {
     content: '';
     flex: 1;
     height: 1px;
-    background: var(--border-color);
+    background: #ebebeb;
   }
 
   .rp-footer {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-top: 20px;
+    font-size: 13.5px;
+    color: #767676;
+    margin-top: 4px;
   }
   .rp-link {
-    color: var(--accent);
+    color: #111;
     font-weight: 700;
     text-decoration: none;
-    transition: opacity .15s;
+    transition: color .15s;
   }
-  .rp-link:hover { opacity: .8; }
+  .rp-link:hover { color: #e60023; }
 
   .rp-terms {
-    font-size: 11px;
-    color: var(--text-tertiary);
+    font-size: 11.5px;
+    color: #aaa;
     margin-top: 16px;
     line-height: 1.6;
   }
   .rp-terms a {
-    color: var(--text-secondary);
+    color: #767676;
     text-decoration: underline;
     transition: color .15s;
   }
-  .rp-terms a:hover { color: var(--text-primary); }
+  .rp-terms a:hover { color: #111; }
 
   @keyframes rpFadeUp {
-    from { opacity: 0; transform: translateY(18px); }
+    from { opacity: 0; transform: translateY(16px); }
     to   { opacity: 1; transform: translateY(0); }
   }
   @keyframes rpSpin { to { transform: rotate(360deg); } }
   .rp-spin { animation: rpSpin .7s linear infinite; }
 
-  @media (max-width: 400px) {
-    .rp-card { padding: 32px 20px 28px; border-radius: 24px; }
-    .rp-logo { font-size: 28px; }
+  @media (max-width: 420px) {
+    .rp-card { padding: 32px 22px 28px; border-radius: 20px; }
+    .rp-headline { font-size: 21px; }
   }
 `;
 
@@ -225,6 +264,16 @@ function injectStyles() {
   document.head.appendChild(s);
 }
 
+function ShoppingBagIcon() {
+  return (
+    <svg viewBox="0 0 24 24">
+      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <path d="M16 10a4 4 0 0 1-8 0"/>
+    </svg>
+  );
+}
+
 function EyeOpen() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -234,6 +283,7 @@ function EyeOpen() {
     </svg>
   );
 }
+
 function EyeOff() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
@@ -244,6 +294,7 @@ function EyeOff() {
     </svg>
   );
 }
+
 function Spinner() {
   return (
     <svg className="rp-spin" width="18" height="18" viewBox="0 0 24 24"
@@ -253,7 +304,6 @@ function Spinner() {
   );
 }
 
-/* Password strength scorer */
 function getStrength(pw) {
   if (!pw) return { score: 0, label: '', color: '' };
   let score = 0;
@@ -300,13 +350,16 @@ export default function RegisterPage() {
     <div className="rp">
       <div className="rp-card">
 
-        {/* LOGO */}
         <div className="rp-logo">
-          ShopPin<span className="rp-logo-dot" />
+          <div className="rp-logo-icon">
+            <ShoppingBagIcon />
+          </div>
+          <span className="rp-logo-name">Shop<span>Pin</span></span>
         </div>
-        <p className="rp-sub">Create your account</p>
 
-        {/* ERROR */}
+        <h1 className="rp-headline">Create your account</h1>
+        <p className="rp-sub">Join ShopPin and shoppin'</p>
+
         {error && (
           <div className="rp-error">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
@@ -321,7 +374,6 @@ export default function RegisterPage() {
 
         <form className="rp-form" onSubmit={handleSubmit}>
 
-          {/* NAME */}
           <div className="rp-field">
             <input
               className="rp-input no-icon"
@@ -331,10 +383,10 @@ export default function RegisterPage() {
               autoComplete="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              disabled={loading}
             />
           </div>
 
-          {/* EMAIL */}
           <div className="rp-field">
             <input
               className="rp-input no-icon"
@@ -344,10 +396,10 @@ export default function RegisterPage() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
             />
           </div>
 
-          {/* PASSWORD */}
           <div className="rp-field">
             <input
               className="rp-input"
@@ -358,18 +410,19 @@ export default function RegisterPage() {
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
             />
             <button
               type="button"
               className="rp-eye"
               onClick={() => setShowPw(v => !v)}
               aria-label={showPw ? 'Hide password' : 'Show password'}
+              disabled={loading}
             >
               {showPw ? <EyeOff /> : <EyeOpen />}
             </button>
           </div>
 
-          {/* STRENGTH METER */}
           {password.length > 0 && (
             <>
               <div className="rp-strength">
@@ -387,7 +440,6 @@ export default function RegisterPage() {
             </>
           )}
 
-          {/* SUBMIT */}
           <button type="submit" className="rp-cta" disabled={loading}>
             {loading ? <><Spinner /> Creating account…</> : 'Create account'}
           </button>
